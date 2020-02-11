@@ -6,6 +6,7 @@
  */
 #include <stdint.h>
 #include "main.h"
+#include "uart_wrapper.h"
 //#include "stm32f7xx_hal.h"
 //#include "stm32f7xx_hal_conf.h"
 //#include "stm32f7xx_ll_rcc.h"
@@ -40,7 +41,7 @@ __weak void uart_abrtcpltcallback(USART_TypeDef* usart)
 /**
  * \brief           DMA1 stream1 interrupt handler for USART3 RX
  */
-void DMA1_Stream1_IRQHandler(void)
+void DMA_Stream_USART_RX_Handler(void)
 {
     /* Check transfer-complete interrupt */
     if (LL_DMA_IsEnabledIT_TC(DMA1, LL_DMA_STREAM_1) && LL_DMA_IsActiveFlag_TC1(DMA1)) {
@@ -52,9 +53,9 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
- * \brief           DMA1 stream1 interrupt handler for USART3 TX
+ * \brief           DMA1 stream3 interrupt handler for USART3 TX
  */
-void DMA1_Stream3_IRQHandler(void)
+void DMA_Stream_USART_TX_Handler(void)
 {
     /* Check transfer complete */
     if (LL_DMA_IsEnabledIT_TC(DMA1, LL_DMA_STREAM_3) && LL_DMA_IsActiveFlag_TC3(DMA1)) {
@@ -68,7 +69,7 @@ void DMA1_Stream3_IRQHandler(void)
 /**
  * \brief           USART3 global interrupt handler
  */
-void USART3_IRQHandler(void)
+void USART_IRQHandler(void)
 {
 	/* Check for Character Match interrupt */
 	if (LL_USART_IsEnabled(USART3) && LL_USART_IsActiveFlag_CM(USART3))

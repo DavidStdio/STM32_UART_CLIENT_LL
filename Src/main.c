@@ -70,14 +70,12 @@ void uart_txcpltcallback(USART_TypeDef *uart)
 
 void uart_rxcpltcallback(USART_TypeDef *uart)
 {
-	//CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE | USART_CR1_CMIE);
 	LL_USART_DisableIT_CM(uart);
 	receiveDone = 1;
 }
 
 void uart_abrtcpltcallback(USART_TypeDef *uart)
 {
-	//CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE | USART_CR1_CMIE);
 	LL_USART_DisableIT_CM(uart);
 	receiveDone = 1;
 }
@@ -178,12 +176,15 @@ int main(void)
 		  __WFI();
 	  }
 
-	  //if( pDataRx[0] != 101)
-	//	  __asm("BKPT");
+	  if( pDataRx[0] != 101)
+		  __asm("BKPT");
 
 	  len = strlen_7e(pDataRx);
-	  len = UnStuffData(pDataRx, len, pDataRxCopy);
-	  dPtr = pDataRxCopy;
+	  UnStuffData(pDataRx, len, pDataRxCopy);
+	  //len = UnStuffData(pDataRx, len, pDataRxCopy);
+	  //dPtr = pDataRxCopy;
+	  dPtr = pDataRx;
+    /* USER CODE END WHILE */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -314,6 +315,10 @@ static void MX_USART3_UART_Init(void)
   LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_3, LL_DMA_MDATAALIGN_BYTE);
 
   LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_3);
+
+  /* USART3 interrupt Init */
+  NVIC_SetPriority(USART3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(USART3_IRQn);
 
   /* USER CODE BEGIN USART3_Init 1 */
   //MODIFY_REG(huart3.Instance->CR2, USART_CR2_ADD, ((uint32_t)CRLFchar << UART_CR2_ADDRESS_LSB_POS));

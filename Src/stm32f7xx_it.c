@@ -23,6 +23,7 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "uart_wrapper.h"
 /* USER CODE END Includes */
   
 /* Private typedef -----------------------------------------------------------*/
@@ -197,33 +198,47 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f7xx.s).                    */
 /******************************************************************************/
 
-///**
-//  * @brief This function handles DMA1 stream1 global interrupt.
-//  */
-//void DMA1_Stream1_IRQHandler(void)
-//{
-//  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+/**
+  * @brief This function handles DMA1 stream1 global interrupt.
+  */
+void DMA1_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+	DMA_Stream_USART_RX_Handler();
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
+  
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 //
-//  /* USER CODE END DMA1_Stream1_IRQn 0 */
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream3 global interrupt.
+  */
+void DMA1_Stream3_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
+	DMA_Stream_USART_TX_Handler();
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 //
-//  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
-//
-//  /* USER CODE END DMA1_Stream1_IRQn 1 */
-//}
-//
-///**
-//  * @brief This function handles DMA1 stream3 global interrupt.
-//  */
-//void DMA1_Stream3_IRQHandler(void)
-//{
-//  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
-//
-//  /* USER CODE END DMA1_Stream3_IRQn 0 */
-//
-//  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
-//
-//  /* USER CODE END DMA1_Stream3_IRQn 1 */
-//}
+  /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART3 global interrupt.
+  */
+void USART3_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART3_IRQn 0 */
+	USART_IRQHandler();
+
+  /* USER CODE END USART3_IRQn 0 */
+  /* USER CODE BEGIN USART3_IRQn 1 */
+
+  /* USER CODE END USART3_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 
