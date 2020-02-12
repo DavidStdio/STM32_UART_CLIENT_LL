@@ -23,6 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 #include "uart_wrapper.h"
 /* USER CODE END Includes */
 
@@ -60,7 +61,9 @@ static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN 0 */
 int transmitDone = 0;
 int receiveDone = 0;
-uint8_t pDataRx[150] = {0};
+int prev_offset = 0;
+uint8_t pDataRx[256] = {0};
+uint8_t message[256] = {0};
 uint8_t pDataRxCopy[150] = {0};
 
 void uart_txcpltcallback(USART_TypeDef *uart)
@@ -70,15 +73,40 @@ void uart_txcpltcallback(USART_TypeDef *uart)
 
 void uart_rxcpltcallback(USART_TypeDef *uart)
 {
-	LL_USART_DisableIT_CM(uart);
+	int offset;
+	size_t size;
+
+	offset = sizeof(pDataRx) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_1);
+	if(offset != prev_offset)
+	{
+		if(offset > prev_offset)
+		{
+			memcpy(&message[0], &pDataRx[prev_offset], offset - prev_offset);
+		}
+		else
+		{
+			size = sizeof(pDataRx) - prev_offset;
+			memcpy(&message[0], &pDataRx[prev_offset], size);
+
+			if(offset > 0)
+			{
+				memcpy(&message[size], &pDataRx[0], offset);
+			}
+		}
+	}
+	prev_offset = offset;
+    if (prev_offset == sizeof(pDataRx)) {
+        prev_offset = 0;
+    }
+
 	receiveDone = 1;
 }
 
-void uart_abrtcpltcallback(USART_TypeDef *uart)
-{
-	LL_USART_DisableIT_CM(uart);
-	receiveDone = 1;
-}
+//void uart_abrtcpltcallback(USART_TypeDef *uart)
+//{
+//	LL_USART_DisableIT_CM(uart);
+//	receiveDone = 1;
+//}
 
 int strlen_7e(uint8_t *str)
 {
@@ -154,6 +182,7 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  usart_start_rx_dma_transfer(pDataRx, sizeof(pDataRx));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -170,21 +199,23 @@ int main(void)
 		  __WFI();
 	  }
 
-	  usart_start_rx_dma_transfer(pDataRx, sizeof(pDataRx));
+	  memset(message, 0, sizeof(message));
 	  while(!receiveDone)
 	  {
 		  __WFI();
 	  }
 
-	  if( pDataRx[0] != 101)
+	  //if( pDataRx[0] != 101)
+		//  __asm("BKPT");
+
+	  len = strlen_7e(message);
+	  if(len<102)
 		  __asm("BKPT");
 
-	  len = strlen_7e(pDataRx);
-	  UnStuffData(pDataRx, len, pDataRxCopy);
+	  UnStuffData(message, len, pDataRxCopy);
 	  //len = UnStuffData(pDataRx, len, pDataRxCopy);
 	  //dPtr = pDataRxCopy;
-	  dPtr = pDataRx;
-    /* USER CODE END WHILE */
+	  dPtr = message;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -285,7 +316,7 @@ static void MX_USART3_UART_Init(void)
 
   LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
 
-  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_NORMAL);
+  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
 
   LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
 

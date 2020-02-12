@@ -46,7 +46,7 @@ void DMA_Stream_USART_RX_Handler(void)
     /* Check transfer-complete interrupt */
     if (LL_DMA_IsEnabledIT_TC(DMA1, LL_DMA_STREAM_1) && LL_DMA_IsActiveFlag_TC1(DMA1)) {
         LL_DMA_ClearFlag_TC1(DMA1);             /* Clear transfer complete flag */
-        uart_rxcpltcallback(USART3);                       /* Check for data to process */
+        //uart_rxcpltcallback(USART3);                       /* Check for data to process */
     }
 
     /* Implement other events when needed */
@@ -75,20 +75,26 @@ void USART_IRQHandler(void)
 	if (LL_USART_IsEnabled(USART3) && LL_USART_IsActiveFlag_CM(USART3))
 	{
         LL_USART_ClearFlag_CM(USART3);        /* Clear Character Match flag */
-		if ( LL_USART_IsEnabledDMAReq_RX(USART3) ) //HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR)
-		{
-			//CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
-			LL_USART_DisableDMAReq_RX(USART3);
-			LL_DMA_DisableStream(DMA1, LL_DMA_STREAM_1);
-		}
-        uart_abrtcpltcallback(USART3);          /* Check for data to process */
+		//if ( LL_USART_IsEnabledDMAReq_RX(USART3) )
+		//{
+			//LL_USART_DisableDMAReq_RX(USART3);
+			//LL_DMA_DisableStream(DMA1, LL_DMA_STREAM_1);
+		//}
+        //uart_abrtcpltcallback(USART3);          /* Check for data to process */
+		uart_rxcpltcallback(USART3);
+        /*TODO
+         * disable IDLE line interrupt and proccess the
+         * received message
+         * reenable IDLE line interrupt after message
+         * processed and we ready to proccess the next
+         */
 	}
 
     /* Check for IDLE line interrupt */
     if (LL_USART_IsEnabledIT_IDLE(USART3) && LL_USART_IsActiveFlag_IDLE(USART3))
     {
         LL_USART_ClearFlag_IDLE(USART3);        /* Clear IDLE line flag */
-        uart_rxcpltcallback(USART3);         	/* Check for data to process */
+        //uart_rxcpltcallback(USART3);         	/* Check for data to process */
     }
 
     /* Implement other events when needed */
