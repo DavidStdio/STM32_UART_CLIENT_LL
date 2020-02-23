@@ -20,10 +20,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "FreeRTOS.h"
 #include "uart_wrapper.h"
 /* USER CODE END Includes */
 
@@ -44,6 +46,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+osThreadId_t UartTaskHandle;
+osSemaphoreId_t uartWaitTxCompletionSemHandle;
+osSemaphoreId_t uartWaitRxCompletionSemHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -53,14 +58,14 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
+void StartUartTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int transmitDone = 0;
-int receiveDone = 0;
 int prev_offset = 0;
 uint8_t pDataRx[256] = {0};
 uint8_t message[256] = {0};
@@ -68,7 +73,8 @@ uint8_t pDataRxCopy[150] = {0};
 
 void uart_txcpltcallback(USART_TypeDef *uart)
 {
-	transmitDone = 1;
+	//transmitDone = 1;
+	osSemaphoreRelease(uartWaitTxCompletionSemHandle);
 }
 
 void uart_rxcpltcallback(USART_TypeDef *uart)
@@ -99,14 +105,8 @@ void uart_rxcpltcallback(USART_TypeDef *uart)
         prev_offset = 0;
     }
 
-	receiveDone = 1;
+	osSemaphoreRelease(uartWaitRxCompletionSemHandle);
 }
-
-//void uart_abrtcpltcallback(USART_TypeDef *uart)
-//{
-//	LL_USART_DisableIT_CM(uart);
-//	receiveDone = 1;
-//}
 
 int strlen_7e(uint8_t *str)
 {
@@ -144,6 +144,10 @@ size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
 	return dst - start;
 }
 
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+{
+ __asm("BKPT");
+}
 /* USER CODE END 0 */
 
 /**
@@ -153,10 +157,7 @@ size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t pData[] = "Bring me data\n\r";
-	uint8_t *dPtr = pData;
-	volatile int len = sizeof(pData), count=0;
-	pData[sizeof(pData) - 2] = 0x7E;
+
   /* USER CODE END 1 */
   
 
@@ -185,37 +186,60 @@ int main(void)
   usart_start_rx_dma_transfer(pDataRx, sizeof(pDataRx));
   /* USER CODE END 2 */
 
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of uartWaitTxCompletionSem */
+  const osSemaphoreAttr_t uartWaitTxCompletionSem_attributes = {
+    .name = "uartWaitTxCompletionSem"
+  };
+  uartWaitTxCompletionSemHandle = osSemaphoreNew(1, 0, &uartWaitTxCompletionSem_attributes);
+
+  /* definition and creation of uartWaitRxCompletionSem */
+  const osSemaphoreAttr_t uartWaitRxCompletionSem_attributes = {
+    .name = "uartWaitRxCompletionSem"
+  };
+  uartWaitRxCompletionSemHandle = osSemaphoreNew(1, 0, &uartWaitRxCompletionSem_attributes);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of UartTask */
+  const osThreadAttr_t UartTask_attributes = {
+    .name = "UartTask",
+    .priority = (osPriority_t) osPriorityNormal,
+    .stack_size = 3*128
+  };
+  UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+  
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  transmitDone = 0;
-	  receiveDone = 0;
 
-	  count++;
-	  usart_start_tx_dma_transfer(dPtr, len);
-	  while(!transmitDone)
-	  {
-		  __WFI();
-	  }
-
-	  memset(message, 0, sizeof(message));
-	  while(!receiveDone)
-	  {
-		  __WFI();
-	  }
-
-	  //if( pDataRx[0] != 101)
-		//  __asm("BKPT");
-
-	  len = strlen_7e(message);
-	  if(len<102)
-		  __asm("BKPT");
-
-	  UnStuffData(message, len, pDataRxCopy);
-	  //len = UnStuffData(pDataRx, len, pDataRxCopy);
-	  //dPtr = pDataRxCopy;
-	  dPtr = message;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -348,7 +372,7 @@ static void MX_USART3_UART_Init(void)
   LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_3);
 
   /* USART3 interrupt Init */
-  NVIC_SetPriority(USART3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_SetPriority(USART3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
   NVIC_EnableIRQ(USART3_IRQn);
 
   /* USER CODE BEGIN USART3_Init 1 */
@@ -383,10 +407,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream1_IRQn interrupt configuration */
-  NVIC_SetPriority(DMA1_Stream1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_SetPriority(DMA1_Stream1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
   NVIC_EnableIRQ(DMA1_Stream1_IRQn);
   /* DMA1_Stream3_IRQn interrupt configuration */
-  NVIC_SetPriority(DMA1_Stream3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_SetPriority(DMA1_Stream3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
   NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
@@ -592,6 +616,65 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartUartTask */
+/**
+  * @brief  Function implementing the UartTask thread.
+  * @param  argument: Not used 
+  * @retval None
+  */
+/* USER CODE END Header_StartUartTask */
+void StartUartTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+	uint8_t pData[] = "Bring me data\n\r";
+	uint8_t *dPtr = pData;
+	volatile int len = sizeof(pData), count=0;
+	pData[sizeof(pData) - 2] = 0x7E;
+  /* Infinite loop */
+  for(;;)
+  {
+	  usart_start_tx_dma_transfer(dPtr, len);
+	  osSemaphoreAcquire(uartWaitTxCompletionSemHandle, 10000);
+
+	  memset(message, 0, sizeof(message));
+
+	  osSemaphoreAcquire(uartWaitRxCompletionSemHandle, 10000);
+	  if( message[0] != 101)
+		  __asm("BKPT");
+
+	  len = strlen_7e(message);
+	  if(len<102)
+		  __asm("BKPT");
+
+	  UnStuffData(message, len, pDataRxCopy);
+	  //len = UnStuffData(pDataRx, len, pDataRxCopy);
+	  //dPtr = pDataRxCopy;
+	  dPtr = message;
+  }
+  /* USER CODE END 5 */ 
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM3 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM3) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
