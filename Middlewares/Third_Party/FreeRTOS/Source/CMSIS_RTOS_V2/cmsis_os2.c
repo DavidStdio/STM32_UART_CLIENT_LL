@@ -1883,11 +1883,11 @@ extern void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer
 
 /* Idle task control block and stack */
 static StaticTask_t Idle_TCB;
-static StackType_t  Idle_Stack[3*configMINIMAL_STACK_SIZE];
+static StackType_t  Idle_Stack[configMINIMAL_STACK_SIZE];
 
 /* Timer task control block and stack */
 static StaticTask_t Timer_TCB;
-static StackType_t  Timer_Stack[3*configTIMER_TASK_STACK_DEPTH];
+static StackType_t  Timer_Stack[configTIMER_TASK_STACK_DEPTH];
 
 /*
   vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION

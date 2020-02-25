@@ -46,9 +46,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+osThreadId_t UartTaskHandle;
 osSemaphoreId_t uartWaitTxCompletionSemHandle;
 osSemaphoreId_t uartWaitRxCompletionSemHandle;
-osThreadId_t UartTaskHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -222,7 +222,7 @@ int main(void)
   const osThreadAttr_t UartTask_attributes = {
     .name = "UartTask",
     .priority = (osPriority_t) osPriorityNormal,
-    .stack_size = 3 * 128
+    .stack_size = 384
   };
   UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
 
@@ -626,6 +626,10 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartUartTask */
 void StartUartTask(void *argument)
 {
+    
+    
+    
+
   /* USER CODE BEGIN 5 */
 	uint8_t pData[] = "Bring me data\n\r";
 	uint8_t *dPtr = pData;
