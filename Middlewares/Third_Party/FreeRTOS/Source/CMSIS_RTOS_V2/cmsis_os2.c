@@ -435,8 +435,8 @@ osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAtt
     }
 
     if (mem == 1) {
-      //hTask = xTaskCreateStatic ((TaskFunction_t)func, name, stack, argument, prio, (StackType_t  *)attr->stack_mem,
-                                                                                  //  (StaticTask_t *)attr->cb_mem);
+      hTask = xTaskCreateStatic ((TaskFunction_t)func, name, stack, argument, prio, (StackType_t  *)attr->stack_mem,
+                                                                                    (StaticTask_t *)attr->cb_mem);
     }
     else {
       if (mem == 0) {
@@ -1434,7 +1434,7 @@ osSemaphoreId_t osSemaphoreNew (uint32_t max_count, uint32_t initial_count, cons
     if (mem != -1) {
       if (max_count == 1U) {
         if (mem == 1) {
-      //    hSemaphore = xSemaphoreCreateBinaryStatic ((StaticSemaphore_t *)attr->cb_mem);
+          hSemaphore = xSemaphoreCreateBinaryStatic ((StaticSemaphore_t *)attr->cb_mem);
         }
         else {
           hSemaphore = xSemaphoreCreateBinary();
@@ -1449,7 +1449,7 @@ osSemaphoreId_t osSemaphoreNew (uint32_t max_count, uint32_t initial_count, cons
       }
       else {
         if (mem == 1) {
-       //   hSemaphore = xSemaphoreCreateCountingStatic (max_count, initial_count, (StaticSemaphore_t *)attr->cb_mem);
+          hSemaphore = xSemaphoreCreateCountingStatic (max_count, initial_count, (StaticSemaphore_t *)attr->cb_mem);
         }
         else {
           hSemaphore = xSemaphoreCreateCounting (max_count, initial_count);
@@ -1883,11 +1883,11 @@ extern void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer
 
 /* Idle task control block and stack */
 static StaticTask_t Idle_TCB;
-static StackType_t  Idle_Stack[configMINIMAL_STACK_SIZE];
+static StackType_t  Idle_Stack[3*configMINIMAL_STACK_SIZE];
 
 /* Timer task control block and stack */
 static StaticTask_t Timer_TCB;
-static StackType_t  Timer_Stack[configTIMER_TASK_STACK_DEPTH];
+static StackType_t  Timer_Stack[3*configTIMER_TASK_STACK_DEPTH];
 
 /*
   vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION

@@ -897,7 +897,6 @@ V8 if desired. */
 #if configENABLE_BACKWARD_COMPATIBILITY == 1
 	#define eTaskStateGet eTaskGetState
 	#define portTickType TickType_t
-	typedef void * TaskHandle_t;
 	#define xTaskHandle TaskHandle_t
 	#define xQueueHandle QueueHandle_t
 	#define xSemaphoreHandle SemaphoreHandle_t
@@ -948,14 +947,23 @@ point support. */
  */
 struct xSTATIC_LIST_ITEM
 {
+#if (configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES == 1)
+	TickType_t xIntegrityDummy;
+#endif
 	TickType_t xDummy1;
 	void *pvDummy2[ 4 ];
+#if (configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES == 1)
+	TickType_t xIntegrityDummy2;
+#endif
 };
 typedef struct xSTATIC_LIST_ITEM StaticListItem_t;
 
 /* See the comments above the struct xSTATIC_LIST_ITEM definition. */
 struct xSTATIC_MINI_LIST_ITEM
 {
+#if (configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES == 1)
+	TickType_t xIntegrityDummy;
+#endif
 	TickType_t xDummy1;
 	void *pvDummy2[ 2 ];
 };
@@ -964,9 +972,15 @@ typedef struct xSTATIC_MINI_LIST_ITEM StaticMiniListItem_t;
 /* See the comments above the struct xSTATIC_LIST_ITEM definition. */
 typedef struct xSTATIC_LIST
 {
+#if (configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES == 1)
+	TickType_t xIntegrityDummy;
+#endif
 	UBaseType_t uxDummy1;
 	void *pvDummy2;
 	StaticMiniListItem_t xDummy3;
+#if (configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES == 1)
+	TickType_t xIntegrityDummy2;
+#endif
 } StaticList_t;
 
 /*

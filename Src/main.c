@@ -25,7 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
-#include "FreeRTOS.h"
+#include "task.h"
 #include "uart_wrapper.h"
 /* USER CODE END Includes */
 
@@ -46,9 +46,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-osThreadId_t UartTaskHandle;
 osSemaphoreId_t uartWaitTxCompletionSemHandle;
 osSemaphoreId_t uartWaitRxCompletionSemHandle;
+osThreadId_t UartTaskHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -144,7 +144,7 @@ size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
 	return dst - start;
 }
 
-void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+void vApplicationStackOverflowHook(TaskHandle_t xTask, signed char *pcTaskName)
 {
  __asm("BKPT");
 }
@@ -222,7 +222,7 @@ int main(void)
   const osThreadAttr_t UartTask_attributes = {
     .name = "UartTask",
     .priority = (osPriority_t) osPriorityNormal,
-    .stack_size = 3*128
+    .stack_size = 3 * 128
   };
   UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
 
@@ -631,6 +631,7 @@ void StartUartTask(void *argument)
 	uint8_t *dPtr = pData;
 	volatile int len = sizeof(pData), count=0;
 	pData[sizeof(pData) - 2] = 0x7E;
+
   /* Infinite loop */
   for(;;)
   {
